@@ -25,9 +25,12 @@ class GaugeWidget(QWidget):
         self.scalePolygonColors = [[.0, Qt.red],[.33, Qt.yellow],[.66, Qt.green],[1, Qt.transparent]]
         self.scaleMainCount = 10 # For main ticks
         self.scaleSubDivisionCount = 5 # for inner ticks
+        self.scaleValueColor = QColor(50, 50, 50, 255)
+        self.valueMin = 0
+        self.valueMax = 100
 
         self.scaleFontName = "Decorative"
-        self.initialFontSize = 15
+        self.scaleFontSize = 15
 
     def setWidth(self,_width):
         self.resize(_width,self.height())
@@ -132,26 +135,26 @@ class GaugeWidget(QWidget):
         font = QFont(self.scaleFontName, self.scaleFontSize)
         fm = QFontMetrics(font)
 
-        pen_shadow = QPen()
+        penShadow = QPen()
 
-        pen_shadow.setBrush(self.ScaleValueColor)
-        painter.setPen(pen_shadow)
+        penShadow.setBrush(self.scaleValueColor)
+        painter.setPen(penShadow)
 
-        text_radius_factor = 0.8
-        text_radius = self.widget_diameter/2 * text_radius_factor
+        textRadiusFactor = 0.8
+        textRadius = self.widgetDiameter/2 * textRadiusFactor
 
-        scale_per_div = int((self.value_max - self.value_min) / self.scala_main_count)
+        scalePerDiv = int((self.valueMax - self.valueMin) / self.scaleMainCount)
 
-        angle_distance = (float(self.scale_angle_size) / float(self.scala_main_count))
-        for i in range(self.scala_main_count + 1):
-            # text = str(int((self.value_max - self.value_min) / self.scala_main_count * i))
-            text = str(int(self.value_min + scale_per_div * i))
+        angleDistance = (float(self.scaleAngleSize) / float(self.scaleMainCount))
+        for i in range(self.scaleMainCount + 1):
+            # text = str(int((self.valueMax - self.valueMin) / self.scaleMainCount * i))
+            text = str(int(self.valueMin + scalePerDiv * i))
             w = fm.width(text) + 1
             h = fm.height()
             painter.setFont(QFont(self.scaleFontName, self.scaleFontSize))
-            angle = angle_distance * i + float(self.scale_angle_start_value - self.angle_offset)
-            x = text_radius * math.cos(math.radians(angle))
-            y = text_radius * math.sin(math.radians(angle))
+            angle = angleDistance * i + float(self.scaleAngleStartValue - self.angleOffset)
+            x = textRadius * math.cos(math.radians(angle))
+            y = textRadius * math.sin(math.radians(angle))
             # print(w, h, x, y, text)
             text = [x - int(w/2), y - int(h/2), int(w), int(h), Qt.AlignCenter, text]
             painter.drawText(text[0], text[1], text[2], text[3], text[4], text[5])
