@@ -19,18 +19,34 @@ class GaugeWidget(QWidget):
             self.widgetDiameter = _height
         self.outerRadiusFactor = 1 
         self.innerRadiusFactor = 0.9
-        self.scaleAngleStartValue = 135
-        self.scaleAngleSize = 270
+        self.scaleAngleStartValue = 165
+        self.scaleAngleSize = 210
         self.angleOffset = 0
         self.scalePolygonColors = [[.0, Qt.red],[.33, Qt.yellow],[.66, Qt.green],[1, Qt.transparent]]
         self.scaleMainCount = 10 # For main ticks
         self.scaleSubDivisionCount = 5 # for inner ticks
         self.scaleValueColor = QColor(50, 50, 50, 255)
+        self.needleColor = QColor(50, 50, 50, 255)
+        self.centerPointColor = QColor(20, 20, 20, 255)
         self.valueMin = 0
         self.valueMax = 100
+        #self.valueFontName = "Decorative"
+        self.valueFontName = "Lucida"
+        self.valueFontSize = 40
+        self.textRadiusFactor = 0.7
+        self.displayValueColor = QColor(50,50,50,255)
+        self.value = 25#self.valueMin
+        self.valueOffset = 0
 
         self.scaleFontName = "Decorative"
         self.scaleFontSize = 15
+        self.valueNeedle = [QPolygon([
+            QPoint(4, 4),
+            QPoint(-4, 4),
+            QPoint(-3, -1*(self.height()*self.innerRadiusFactor/2)),
+            QPoint(0, -6-(self.height()*self.innerRadiusFactor/2)),
+            QPoint(3, -1*(self.height()*self.innerRadiusFactor/2))
+        ])]
 
     def setWidth(self,_width):
         self.resize(_width,self.height())
@@ -43,8 +59,11 @@ class GaugeWidget(QWidget):
         self.createFineScaledMarker()
         self.drawBigScaledMarker()
         self.createScaleMarkerValuesText()
+        self.createValuesText()
+        self.drawNeedle()
+        self.drawNeedleCenterPoint(diameter=(self.widgetDiameter / 6))
     
-    def createPloygonPie(self, outer_radius, inner_raduis, start, lenght):
+    def createPloygonPie(self, outerRadius, innerRaduis, start, lenght):
         """ Create Polygon for given parameters"""
         polygonPie = QPolygonF()
         n = 360     # angle steps size for full circle
@@ -56,15 +75,15 @@ class GaugeWidget(QWidget):
 
         for i in range(lenght+1):                                              # add the points of polygon
             t = w * i + start - self.angleOffset
-            x = outer_radius * math.cos(math.radians(t))
-            y = outer_radius * math.sin(math.radians(t))
+            x = outerRadius * math.cos(math.radians(t))
+            y = outerRadius * math.sin(math.radians(t))
             polygonPie.append(QPointF(x, y))
         # create inner circle line from "start + lenght"-angle to "start"-angle
         for i in range(lenght+1):                                              # add the points of polygon
             # print("2 " + str(i))
             t = w * (lenght - i) + start - self.angleOffset
-            x = inner_raduis * math.cos(math.radians(t))
-            y = inner_raduis * math.sin(math.radians(t))
+            x = innerRaduis * math.cos(math.radians(t))
+            y = innerRaduis * math.sin(math.radians(t))
             polygonPie.append(QPointF(x, y))
 
         # close outer line
@@ -159,3 +178,52 @@ class GaugeWidget(QWidget):
             text = [x - int(w/2), y - int(h/2), int(w), int(h), Qt.AlignCenter, text]
             painter.drawText(text[0], text[1], text[2], text[3], text[4], text[5])
         # painter.restore()
+
+    def createValuesText(self):
+        painter = QPainter(self)
+        # painter.setRenderHint(QPainter.HighQualityAntialiasing)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.translate(self.width() / 2, self.height() / 2)
+        font = QFont(self.valueFontName, self.valueFontSize)
+        fm = QFontMetrics(font)
+
+        penShadow = QPen()
+
+        penShadow.setBrush(self.displayValueColor)
+        painter.setPen(penShadow)
+
+        textRadius = self.widgetDiameter / 2 * self.textRadiusFactor
+
+        # angle_distance = (float(self.scaleAngleSize) / float(self.scala_main_count))
+        # for i in range(self.scala_main_count + 1):
+        text = str(int(self.value))
+        w = fm.width(text) + 1
+        h = fm.height()
+        painter.setFont(QFont(self.valueFontName, self.valueFontSize))
+
+        angleEnd = float(self.scaleAngleStartValue + self.scaleAngleSize - 360)
+        angle = (angleEnd - self.scaleAngleStartValue) / 2 + self.scaleAngleStartValue
+
+        x = textRadius * math.cos(math.radians(angle))
+        y = textRadius * math.sin(math.radians(angle))
+        text = [x - int(w/2), y - int(h/2), int(w), int(h), Qt.AlignCenter, text]
+        painter.drawText(text[0], text[1], text[2], text[3], text[4], text[5])
+    
+    def drawNeedle(self):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.translate(self.width() / 2, self.height() / 2)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(self.needleColor)
+        painter.rotate(((self.value - self.valueOffset - self.valueMin) * self.scaleAngleSize /
+                        (self.valueMax - self.valueMin)) + 90 + self.scaleAngleStartValue)
+
+        painter.drawConvexPolygon(self.valueNeedle[0])
+    
+    def drawNeedleCenterPoint(self, diameter=30):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.translate(self.width() / 2, self.height() / 2)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(self.centerPointColor)
+        painter.drawEllipse(int(-diameter / 2), int(-diameter / 2), int(diameter), int(diameter))
